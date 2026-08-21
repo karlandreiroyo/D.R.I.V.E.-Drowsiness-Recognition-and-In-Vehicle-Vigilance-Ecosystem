@@ -8,6 +8,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.vigil.ui.theme.VigilTheme
 
@@ -23,14 +27,46 @@ class MainActivity : ComponentActivity() {
         setContent {
             VigilTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
-                    OnboardingScreen(
-                        onFinished = {
-                            // TODO: navigate to your home/dashboard screen
-                        },
-                        onLoginClick = {
-                            // TODO: navigate to login screen
-                        }
-                    )
+
+                    // Available screens: "onboarding", "auth", "login", "signup"
+                    var currentScreen by remember { mutableStateOf("onboarding") }
+
+                    when (currentScreen) {
+                        "onboarding" -> OnboardingScreen(
+                            onFinished = { currentScreen = "auth" },
+                            onLoginClick = { currentScreen = "auth" }
+                        )
+
+                        "auth" -> AuthScreen(
+                            onSignUpClick = { currentScreen = "signup" },
+                            onLogInClick = { currentScreen = "login" }
+                        )
+
+                        "login" -> LoginScreen(
+                            onBackClick = { currentScreen = "auth" },
+                            onLoginClick = { email, password ->
+                                // TODO: actual login logic (validate, call API, etc.)
+                            },
+                            onForgotPasswordClick = {
+                                // TODO: navigate to forgot password screen
+                            },
+                            onGoogleClick = {
+                                // TODO: Google sign-in logic
+                            },
+                            onSignUpClick = { currentScreen = "signup" }
+                        )
+
+                        "signup" -> SignUpScreen(
+                            onBackClick = { currentScreen = "auth" },
+                            onSignUpClick = { fullName, email, password ->
+                                // TODO: actual signup logic (validate, API call, etc.)
+                            },
+                            onGoogleClick = {
+                                // TODO: Google sign-in logic
+                            },
+                            onLoginClick = { currentScreen = "login" }
+                        )
+                    }
                 }
             }
         }

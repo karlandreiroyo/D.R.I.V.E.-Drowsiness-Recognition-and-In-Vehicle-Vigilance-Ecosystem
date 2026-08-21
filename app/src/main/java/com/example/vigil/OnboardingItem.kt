@@ -198,7 +198,7 @@ fun OnboardingPage(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4527A0))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F0B94))
             ) {
                 Text(
                     text = if (isLastPage) "Get Started" else "Next",
