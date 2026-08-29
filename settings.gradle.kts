@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Vigil"
+rootProject.name = "D_R_I_V_E"
 include(":app")

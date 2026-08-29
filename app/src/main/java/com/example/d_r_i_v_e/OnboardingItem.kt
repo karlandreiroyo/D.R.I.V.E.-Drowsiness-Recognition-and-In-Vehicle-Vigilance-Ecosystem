@@ -1,4 +1,4 @@
-package com.example.vigil
+package com.example.d_r_i_v_e
 
 import androidx.compose.ui.graphics.Color
 
@@ -13,7 +13,7 @@ val onboardingItems = listOf(
     OnboardingItem(
         backgroundColor = Color(0xFF3E2723),
         title = "Your Guardian on the Road.",
-        description = "Drive with confidence. Vigil connects seamlessly to your Anti-Drowsy Seat Sensor, keeping you safe on every journey, day or night."
+        description = "Drive with confidence. D.R.I.V.E. connects seamlessly to your Anti-Drowsy Seat Sensor, keeping you safe on every journey, day or night."
     ),
     OnboardingItem(
         backgroundColor = Color(0xFF1B2631),

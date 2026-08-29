@@ -1,4 +1,4 @@
-package com.example.vigil
+package com.example.d_r_i_v_e
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -29,14 +29,13 @@ fun AuthScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.systemBars)
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
 
             Text(
-                text = "Welcome to Vigil.",
+                text = "Welcome to D.R.I.V.E.",
                 color = Color.White,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,

@@ -1,18 +1,21 @@
-package com.example.vigil
+package com.example.d_r_i_v_e
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -23,12 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -38,64 +36,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun GoogleLogo(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val width = size.width
-        val height = size.height
-        val strokeWidth = width * 0.20f
-        val radius = (width - strokeWidth) / 2f
-        val center = Offset(width / 2f, height / 2f)
-        val rect = Rect(
-            left = center.x - radius,
-            top = center.y - radius,
-            right = center.x + radius,
-            bottom = center.y + radius
-        )
-
-        // 1. Red Top Arc
-        val redPath = Path().apply {
-            arcTo(rect, startAngleDegrees = -190f, sweepAngleDegrees = 130f, forceMoveTo = false)
-        }
-        drawPath(redPath, Color(0xFFEA4335), style = Stroke(strokeWidth, cap = StrokeCap.Butt))
-
-        // 2. Yellow Left Arc
-        val yellowPath = Path().apply {
-            arcTo(rect, startAngleDegrees = -190f, sweepAngleDegrees = -55f, forceMoveTo = false)
-        }
-        drawPath(yellowPath, Color(0xFFFBBC05), style = Stroke(strokeWidth, cap = StrokeCap.Butt))
-
-        // 3. Green Bottom Arc
-        val greenPath = Path().apply {
-            arcTo(rect, startAngleDegrees = -245f, sweepAngleDegrees = -85f, forceMoveTo = false)
-        }
-        drawPath(greenPath, Color(0xFF34A853), style = Stroke(strokeWidth, cap = StrokeCap.Butt))
-
-        // 4. Blue Right Arc
-        val blueArcPath = Path().apply {
-            arcTo(rect, startAngleDegrees = -330f, sweepAngleDegrees = -30f, forceMoveTo = false)
-        }
-        drawPath(blueArcPath, Color(0xFF4285F4), style = Stroke(strokeWidth, cap = StrokeCap.Butt))
-
-        // 5. Blue Horizontal Bar
-        val blueBarPath = Path().apply {
-            moveTo(center.x - 2f, center.y)
-            lineTo(center.x + radius + (strokeWidth / 2f), center.y)
-        }
-        drawPath(blueBarPath, Color(0xFF4285F4), style = Stroke(strokeWidth, cap = StrokeCap.Butt))
-    }
-}
-
-@Composable
-fun LoginScreen(
+fun SignUpScreen(
     onBackClick: () -> Unit,
-    onLoginClick: (email: String, password: String) -> Unit,
-    onForgotPasswordClick: () -> Unit,
+    onSignUpClick: (fullName: String, email: String, password: String) -> Unit,
     onGoogleClick: () -> Unit,
-    onSignUpClick: () -> Unit
+    onLoginClick: () -> Unit
 ) {
+    var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+
     var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var isAgreed by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -105,8 +59,8 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.systemBars)
                 .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState())
         ) {
 
             // Back button
@@ -126,8 +80,9 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Title Header
             Text(
-                text = "Welcome back.",
+                text = "Start Your Journey.",
                 color = Color.White,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
@@ -135,10 +90,11 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
+            // Subtitle
             Text(
-                text = "Let's ensure a safe drive today. Enter your details to continue.",
+                text = "Set up your account in seconds before you hit the road.",
                 color = Color.White.copy(alpha = 0.7f),
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,
@@ -147,11 +103,32 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Email / Phone field
+            // Full Name field
+            OutlinedTextField(
+                value = fullName,
+                onValueChange = { fullName = it },
+                placeholder = { Text("Enter your full name", color = Color.White.copy(alpha = 0.5f)) },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFF2C2C2E),
+                    unfocusedContainerColor = Color(0xFF2C2C2E),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Email or Phone field
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                placeholder = { Text("Enter Email or Phone", color = Color.White.copy(alpha = 0.5f)) },
+                placeholder = { Text("Enter your Email or Phone", color = Color.White.copy(alpha = 0.5f)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 shape = RoundedCornerShape(12.dp),
@@ -180,10 +157,7 @@ fun LoginScreen(
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
-                            imageVector = if (passwordVisible)
-                                Icons.Filled.Visibility
-                            else
-                                Icons.Filled.VisibilityOff,
+                            imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                             contentDescription = if (passwordVisible) "Hide password" else "Show password",
                             tint = Color.White.copy(alpha = 0.6f)
                         )
@@ -202,31 +176,78 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Forgot Password
-            Text(
-                text = "Forgot Password",
-                color = Color.White,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .clickable { onForgotPasswordClick() }
+            // Confirm Password field
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                placeholder = { Text("Confirm Password", color = Color.White.copy(alpha = 0.5f)) },
+                singleLine = true,
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(
+                            imageVector = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                            contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password",
+                            tint = Color.White.copy(alpha = 0.6f)
+                        )
+                    }
+                },
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFF2C2C2E),
+                    unfocusedContainerColor = Color(0xFF2C2C2E),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Login button
+            // Terms and Privacy Checkbox
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Checkbox(
+                    checked = isAgreed,
+                    onCheckedChange = { isAgreed = it },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = Color(0xFF0F0B94),
+                        uncheckedColor = Color.White.copy(alpha = 0.6f),
+                        checkmarkColor = Color.White
+                    )
+                )
+                Text(
+                    text = "I agree to the Terms & privacy policy.",
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontSize = 12.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Signup button
             Button(
-                onClick = { onLoginClick(email, password) },
+                onClick = { onSignUpClick(fullName, email, password) },
+                enabled = isAgreed,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F0B94))
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0F0B94),
+                    disabledContainerColor = Color(0xFF0F0B94).copy(alpha = 0.5f)
+                )
             ) {
                 Text(
-                    text = "Login",
+                    text = "Signup",
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
@@ -267,26 +288,26 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Sign up link at the bottom
+            // Login link at the bottom
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp),
+                    .padding(bottom = 24.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Don't have an account? ",
+                    text = "Already have an account? ",
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 13.sp
                 )
                 Text(
-                    text = "Sign up",
+                    text = "Login",
                     color = Color(0xFF6C7BFF),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { onSignUpClick() }
+                    modifier = Modifier.clickable { onLoginClick() }
                 )
             }
         }

@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.vigil"
+    namespace = "com.example.d_r_i_v_e"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.example.vigil"
+        applicationId = "com.example.d_r_i_v_e"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

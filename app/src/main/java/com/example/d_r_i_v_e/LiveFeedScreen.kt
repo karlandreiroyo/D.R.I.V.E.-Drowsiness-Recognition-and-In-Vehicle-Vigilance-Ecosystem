@@ -1,0 +1,288 @@
+package com.example.d_r_i_v_e
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun LiveFeedScreen(
+    onNavigateToDashboard: () -> Unit,
+    onTabMapClick: () -> Unit = {},
+    onTabSettingsClick: () -> Unit = {}
+) {
+    var isDriving by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars)
+        ) {
+            // Scrollable Content Container
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                // Main Container Card
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color(0xFF141414))
+                        .padding(16.dp)
+                ) {
+                    // Header Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Live Feed",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Icon(
+                            imageVector = Icons.Filled.Notifications,
+                            contentDescription = "Notification",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Camera Display Container (Saktong laki, hindi sagad)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(280.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFF1C1C1E)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.PhotoCamera,
+                            contentDescription = "Camera Stream",
+                            tint = if (isDriving) Color(0xFF4CD964) else Color.White.copy(alpha = 0.3f),
+                            modifier = Modifier.size(64.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Status Message Card
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF1C1C1E))
+                            .padding(vertical = 12.dp, horizontal = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isDriving) "Session Active - Monitoring..." else "No Readings Unavailable",
+                            color = if (isDriving) Color(0xFF4CD964) else Color.White.copy(alpha = 0.7f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Metrics Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MetricCard(
+                            label = "Blink Rate:",
+                            value = if (isDriving) "18 bpm" else "--",
+                            modifier = Modifier.weight(1f)
+                        )
+                        MetricCard(
+                            label = "Eye Closure:",
+                            value = if (isDriving) "Normal" else "--",
+                            modifier = Modifier.weight(1f)
+                        )
+                        MetricCard(
+                            label = "Head Pose:",
+                            value = if (isDriving) "Centered" else "--",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Action Button (Start / Stop Driving Session)
+                    Button(
+                        onClick = { isDriving = !isDriving },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(25.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isDriving) Color(0xFF8B0000) else Color(0xFF0F0B94)
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (isDriving) Icons.Filled.Stop else Icons.Filled.PlayArrow,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = if (isDriving) "Stop Driving Session" else "Start Driving Session",
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = if (isDriving) "Trip Duration: 00:01:25" else "Trip Duration: --:--:--",
+                        color = Color.White.copy(alpha = 0.5f),
+                        fontSize = 12.sp,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+            }
+
+            // Bottom Navigation Bar (Parehong style at icons ng Dashboard)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(Color(0xFF141414))
+                    .padding(vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Dashboard / Insights
+                BottomNavIcon(
+                    icon = Icons.Filled.Insights,
+                    isSelected = false,
+                    onClick = onNavigateToDashboard
+                )
+
+                // Camera / Live Feed (Active Tab)
+                BottomNavIcon(
+                    icon = Icons.Filled.CameraAlt,
+                    isSelected = true,
+                    onClick = { }
+                )
+
+                // Map
+                BottomNavIcon(
+                    icon = Icons.Filled.Map,
+                    isSelected = false,
+                    onClick = onTabMapClick
+                )
+
+                // Settings
+                BottomNavIcon(
+                    icon = Icons.Filled.Settings,
+                    isSelected = false,
+                    onClick = onTabSettingsClick
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetricCard(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFF1C1C1E))
+            .padding(vertical = 10.dp, horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            color = Color.White.copy(alpha = 0.6f),
+            fontSize = 11.sp
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = value,
+            color = Color.White,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun BottomNavIcon(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(
+                if (isSelected) {
+                    Color(0xFF0F0B94)
+                } else {
+                    Color.Transparent
+                }
+            )
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(22.dp)
+        )
+    }
+}

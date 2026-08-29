@@ -1,4 +1,4 @@
-package com.example.vigil.ui.theme
+package com.example.d_r_i_v_e.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
