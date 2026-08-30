@@ -4,22 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,9 +23,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.runtime.*
+
 @Composable
 fun LiveFeedScreen(
-    onNavigateToDashboard: () -> Unit,
+    onTabDashboardClick: () -> Unit = {},
+    onTabCameraClick: () -> Unit = {},
     onTabMapClick: () -> Unit = {},
     onTabSettingsClick: () -> Unit = {}
 ) {
@@ -59,7 +63,7 @@ fun LiveFeedScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Color(0xFF141414))
+                        .background(Color(0xFF2E2E30))
                         .padding(16.dp)
                 ) {
                     // Header Row
@@ -85,13 +89,13 @@ fun LiveFeedScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Camera Display Container (Saktong laki, hindi sagad)
+                    // Camera Display Container
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(280.dp)
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFF1C1C1E)),
+                            .background(Color(0xFF4A4A4C)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -109,7 +113,7 @@ fun LiveFeedScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFF1C1C1E))
+                            .background(Color(0xFF4A4A4C))
                             .padding(vertical = 12.dp, horizontal = 16.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -186,46 +190,13 @@ fun LiveFeedScreen(
                 }
             }
 
-            // Bottom Navigation Bar (Parehong style at icons ng Dashboard)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(Color(0xFF141414))
-                    .padding(vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Dashboard / Insights
-                BottomNavIcon(
-                    icon = Icons.Filled.Insights,
-                    isSelected = false,
-                    onClick = onNavigateToDashboard
-                )
-
-                // Camera / Live Feed (Active Tab)
-                BottomNavIcon(
-                    icon = Icons.Filled.CameraAlt,
-                    isSelected = true,
-                    onClick = { }
-                )
-
-                // Map
-                BottomNavIcon(
-                    icon = Icons.Filled.Map,
-                    isSelected = false,
-                    onClick = onTabMapClick
-                )
-
-                // Settings
-                BottomNavIcon(
-                    icon = Icons.Filled.Settings,
-                    isSelected = false,
-                    onClick = onTabSettingsClick
-                )
-            }
+            SharedBottomNav(
+                selectedTab = "camera",
+                onTabDashboardClick = onTabDashboardClick,
+                onTabCameraClick = onTabCameraClick,
+                onTabMapClick = onTabMapClick,
+                onTabSettingsClick = onTabSettingsClick
+            )
         }
     }
 }
@@ -239,7 +210,7 @@ private fun MetricCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1C1C1E))
+            .background(Color(0xFF4A4A4C))
             .padding(vertical = 10.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -258,8 +229,51 @@ private fun MetricCard(
     }
 }
 
+
 @Composable
-private fun BottomNavIcon(
+fun SharedBottomNav(
+    selectedTab: String,
+    onTabDashboardClick: () -> Unit,
+    onTabCameraClick: () -> Unit,
+    onTabMapClick: () -> Unit,
+    onTabSettingsClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .clip(RoundedCornerShape(28.dp))
+            .background(Color(0xFF141414))
+            .padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        SharedNavIcon(
+            icon = Icons.Filled.Insights,
+            isSelected = selectedTab == "dashboard",
+            onClick = onTabDashboardClick
+        )
+        SharedNavIcon(
+            icon = Icons.Filled.CameraAlt,
+            isSelected = selectedTab == "camera",
+            onClick = onTabCameraClick
+        )
+        SharedNavIcon(
+            icon = Icons.Filled.Map,
+            isSelected = selectedTab == "map",
+            onClick = onTabMapClick
+        )
+        SharedNavIcon(
+            icon = Icons.Filled.Settings,
+            isSelected = selectedTab == "settings",
+            onClick = onTabSettingsClick
+        )
+    }
+}
+
+@Composable
+private fun SharedNavIcon(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit
@@ -268,13 +282,7 @@ private fun BottomNavIcon(
         modifier = Modifier
             .size(44.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(
-                if (isSelected) {
-                    Color(0xFF0F0B94)
-                } else {
-                    Color.Transparent
-                }
-            )
+            .background(if (isSelected) Color(0xFF0F0B94) else Color.Transparent)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {

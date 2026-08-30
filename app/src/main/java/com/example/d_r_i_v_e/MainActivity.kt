@@ -32,6 +32,26 @@ class MainActivity : ComponentActivity() {
                     var otpDestination by remember { mutableStateOf("") }
                     var isOnline by remember { mutableStateOf(false) }
 
+                    var trips by remember {
+                        mutableStateOf(
+                            listOf(
+                                TripEntry(
+                                    id = "1",
+                                    dateLabel = "Today, 7:45 AM",
+                                    totalDuration = "45 mins total driving",
+                                    incidents = listOf(
+                                        Incident("Micro-sleep Detected", "9:12 AM")
+                                    )
+                                ),
+                                TripEntry(
+                                    id = "2",
+                                    dateLabel = "Yesterday, 6:07 PM",
+                                    totalDuration = "1 hr 15 mins total driving"
+                                )
+                            )
+                        )
+                    }
+
                     when (currentScreen) {
                         "onboarding" -> OnboardingScreen(
                             onFinished = { currentScreen = "auth" },
@@ -91,15 +111,35 @@ class MainActivity : ComponentActivity() {
                             onStartDrivingClick = {
                                 isOnline = true
                             },
-                            onNavigateToLiveFeed = {
-                                currentScreen = "liveFeed"
-                            }
+                            onTabDashboardClick = { currentScreen = "dashboard" },
+                            onTabCameraClick = { currentScreen = "liveFeed" },
+                            onTabMapClick = { currentScreen = "tripHistory" },
+                            onTabSettingsClick = { currentScreen = "settings" }
                         )
 
                         "liveFeed" -> LiveFeedScreen(
-                            onNavigateToDashboard = {
-                                currentScreen = "dashboard"
-                            }
+                            onTabDashboardClick = { currentScreen = "dashboard" },
+                            onTabCameraClick = { currentScreen = "liveFeed" },
+                            onTabMapClick = { currentScreen = "tripHistory" },
+                            onTabSettingsClick = { currentScreen = "settings" }
+                        )
+
+                        "tripHistory" -> TripHistoryScreen(
+                            trips = trips,
+                            onDeleteTrip = { id ->
+                                trips = trips.filter { it.id != id }
+                            },
+                            onTabDashboardClick = { currentScreen = "dashboard" },
+                            onTabCameraClick = { currentScreen = "liveFeed" },
+                            onTabMapClick = { currentScreen = "tripHistory" },
+                            onTabSettingsClick = { currentScreen = "settings" }
+                        )
+
+                        "settings" -> SettingsScreen(
+                            onTabDashboardClick = { currentScreen = "dashboard" },
+                            onTabCameraClick = { currentScreen = "liveFeed" },
+                            onTabMapClick = { currentScreen = "tripHistory" },
+                            onTabSettingsClick = { currentScreen = "settings" }
                         )
                     }
                 }

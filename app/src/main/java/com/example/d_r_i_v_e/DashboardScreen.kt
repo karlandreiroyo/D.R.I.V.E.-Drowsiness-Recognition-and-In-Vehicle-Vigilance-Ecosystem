@@ -37,8 +37,8 @@ fun DashboardScreen(
     tripDuration: String = "--",
     receivedAlerts: String = "--",
     onStartDrivingClick: () -> Unit,
-    onNavigateToLiveFeed: () -> Unit, // <-- Naidagdag na parameter
     onTabDashboardClick: () -> Unit = {},
+    onTabCameraClick: () -> Unit = {},
     onTabMapClick: () -> Unit = {},
     onTabSettingsClick: () -> Unit = {}
 ) {
@@ -68,7 +68,7 @@ fun DashboardScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Color(0xFF141414))
+                        .background(Color(0xFF2E2E30))
                         .padding(20.dp)
                 ) {
 
@@ -121,7 +121,7 @@ fun DashboardScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFF1C1C1E))
+                            .background(Color(0xFF4A4A4C))
                             .padding(vertical = 32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -182,7 +182,7 @@ fun DashboardScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0xFF1C1C1E))
+                            .background(Color(0xFF4A4A4C))
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -280,11 +280,11 @@ fun DashboardScreen(
                     onClick = onTabDashboardClick
                 )
 
-                // Camera / Live Feed (Ikinabit sa onNavigateToLiveFeed)
+                // Camera / Live Feed (Ikinabit sa onTabCameraClick)
                 BottomNavIcon(
                     icon = Icons.Filled.CameraAlt,
                     isSelected = false,
-                    onClick = onNavigateToLiveFeed
+                    onClick = onTabCameraClick
                 )
 
                 // Map
@@ -315,7 +315,7 @@ private fun InfoCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFF1C1C1E))
+            .background(Color(0xFF4A4A4C))
             .padding(14.dp)
     ) {
 
