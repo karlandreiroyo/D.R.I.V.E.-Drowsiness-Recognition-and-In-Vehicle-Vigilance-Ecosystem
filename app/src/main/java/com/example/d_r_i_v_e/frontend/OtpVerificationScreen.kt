@@ -1,4 +1,4 @@
-package com.example.d_r_i_v_e
+package com.example.d_r_i_v_e.frontend
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -26,12 +27,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ForgotPasswordScreen(
+fun OtpVerificationScreen(
+    maskedDestination: String, // e.g. "09*********"
     onBackClick: () -> Unit,
-    onSendCodeClick: (emailOrPhone: String) -> Unit,
-    onLoginClick: () -> Unit
+    onVerifyClick: (otp: String) -> Unit,
+    onResendClick: () -> Unit
 ) {
-    var emailOrPhone by remember { mutableStateOf("") }
+    var otpValues by remember { mutableStateOf(List(6) { "" }) }
 
     Box(
         modifier = Modifier
@@ -63,18 +65,18 @@ fun ForgotPasswordScreen(
             Spacer(modifier = Modifier.height(100.dp))
 
             Text(
-                text = "Forgot Password?",
+                text = "Check your Email/SMS",
                 color = Color.White,
-                fontSize = 24.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "Enter the email or phone number associated with your account, and we'll send you a verification code.",
+                text = "We've sent a 6-digit code to $maskedDestination",
                 color = Color.White.copy(alpha = 0.7f),
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,
@@ -83,31 +85,49 @@ fun ForgotPasswordScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Email / Phone field
-            OutlinedTextField(
-                value = emailOrPhone,
-                onValueChange = { emailOrPhone = it },
-                placeholder = { Text("Enter Email or Phone", color = Color.White.copy(alpha = 0.5f)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFF2C2C2E),
-                    unfocusedContainerColor = Color(0xFF2C2C2E),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    cursorColor = Color.White
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
+            // 6-box OTP input
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                otpValues.forEachIndexed { index, value ->
+                    OutlinedTextField(
+                        value = value,
+                        onValueChange = { newValue ->
+                            if (newValue.length <= 1 && newValue.all { it.isDigit() }) {
+                                otpValues = otpValues.toMutableList().also { it[index] = newValue }
+                            }
+                        },
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        ),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF2C2C2E),
+                            unfocusedContainerColor = Color(0xFF2C2C2E),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color(0xFF0F0B94),
+                            unfocusedBorderColor = Color.Transparent,
+                            cursorColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                    )
+                }
+            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // Send Code button
+            // Verify OTP button
             Button(
-                onClick = { onSendCodeClick(emailOrPhone) },
+                onClick = { onVerifyClick(otpValues.joinToString("")) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -115,7 +135,7 @@ fun ForgotPasswordScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F0B94))
             ) {
                 Text(
-                    text = "Send Code",
+                    text = "Verify OTP",
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
@@ -124,22 +144,22 @@ fun ForgotPasswordScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Remembered your password? Login
+            // Didn't receive the code? Resend
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Remembered your password? ",
+                    text = "Didn't receive the code? ",
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 13.sp
                 )
                 Text(
-                    text = "Login",
+                    text = "Resend",
                     color = Color(0xFF6C7BFF),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { onLoginClick() }
+                    modifier = Modifier.clickable { onResendClick() }
                 )
             }
         }

@@ -1,4 +1,4 @@
-package com.example.d_r_i_v_e
+package com.example.d_r_i_v_e.frontend
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,7 +68,7 @@ fun DashboardScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Color(0xFF2E2E30))
+                        .background(Color(0xFF141414))
                         .padding(20.dp)
                 ) {
 

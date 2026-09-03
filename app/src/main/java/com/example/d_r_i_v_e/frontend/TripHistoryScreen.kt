@@ -1,4 +1,4 @@
-package com.example.d_r_i_v_e
+package com.example.d_r_i_v_e.frontend
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,18 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-data class Incident(
-    val description: String,
-    val time: String
-)
-
-data class TripEntry(
-    val id: String,
-    val dateLabel: String,
-    val totalDuration: String,
-    val incidents: List<Incident> = emptyList()
-)
+import com.example.d_r_i_v_e.TripEntry
 
 @Composable
 fun TripHistoryScreen(

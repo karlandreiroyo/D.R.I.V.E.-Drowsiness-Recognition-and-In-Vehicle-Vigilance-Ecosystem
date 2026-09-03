@@ -1,4 +1,4 @@
-package com.example.d_r_i_v_e
+package com.example.d_r_i_v_e.frontend
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.d_r_i_v_e.R
 
 @Composable
 fun AuthScreen(

@@ -1,4 +1,4 @@
-package com.example.d_r_i_v_e
+package com.example.d_r_i_v_e.frontend
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background

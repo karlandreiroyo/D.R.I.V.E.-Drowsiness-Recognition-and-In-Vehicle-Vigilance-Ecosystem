@@ -1,4 +1,4 @@
-package com.example.d_r_i_v_e.ui.theme
+package com.example.d_r_i_v_e.frontend.theme
 
 import androidx.compose.ui.graphics.Color
 
