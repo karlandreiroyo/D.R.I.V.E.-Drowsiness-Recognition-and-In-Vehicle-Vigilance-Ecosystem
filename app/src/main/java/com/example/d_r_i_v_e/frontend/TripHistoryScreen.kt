@@ -178,7 +178,7 @@ private fun TripCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF4A4A4C))
+                    .background(Color(0xFF2A2A2C))
                     .padding(vertical = 4.dp)
             ) {
                 trip.incidents.forEach { incident ->

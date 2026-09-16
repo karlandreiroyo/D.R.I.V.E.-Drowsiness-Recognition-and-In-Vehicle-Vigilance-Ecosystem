@@ -240,33 +240,25 @@ private fun ArchiveEntryCard(
 
         IconButton(
             onClick = onRestoreClick,
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF0A2E1A))
+            modifier = Modifier.size(40.dp)
         ) {
             Icon(
                 imageVector = Icons.Filled.Restore,
                 contentDescription = "Restore",
                 tint = Color(0xFF4CD964),
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(22.dp)
             )
         }
 
-        Spacer(modifier = Modifier.width(8.dp))
-
         IconButton(
             onClick = onDeleteClick,
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF3A1414))
+            modifier = Modifier.size(40.dp)
         ) {
             Icon(
                 imageVector = Icons.Filled.Delete,
                 contentDescription = "Delete permanently",
                 tint = Color(0xFFFF5C5C),
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(22.dp)
             )
         }
     }

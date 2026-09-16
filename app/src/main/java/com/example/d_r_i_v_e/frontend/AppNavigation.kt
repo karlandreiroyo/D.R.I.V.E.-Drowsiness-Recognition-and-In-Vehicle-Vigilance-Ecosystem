@@ -1,12 +1,29 @@
 package com.example.d_r_i_v_e.frontend
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import com.example.d_r_i_v_e.TripEntry
 import com.example.d_r_i_v_e.Incident
 
 @Composable
 fun AppNavigation() {
-    var currentScreen by remember { mutableStateOf("onboarding") }
+    var screenHistory by remember { mutableStateOf(listOf("onboarding")) }
+    val currentScreen = screenHistory.last()
+
+    fun navigateTo(screen: String) {
+        screenHistory = screenHistory + screen
+    }
+
+    fun goBack() {
+        if (screenHistory.size > 1) {
+            screenHistory = screenHistory.dropLast(1)
+        }
+    }
+
+    BackHandler(enabled = screenHistory.size > 1) {
+        goBack()
+    }
+
     var otpDestination by remember { mutableStateOf("") }
     var isOnline by remember { mutableStateOf(false) }
     var isHardwareConnected by remember { mutableStateOf(false) }
@@ -44,54 +61,54 @@ fun AppNavigation() {
 
     when (currentScreen) {
         "onboarding" -> OnboardingScreen(
-            onFinished = { currentScreen = "auth" },
-            onLoginClick = { currentScreen = "auth" }
+            onFinished = { navigateTo("auth") },
+            onLoginClick = { navigateTo("auth") }
         )
 
         "auth" -> AuthScreen(
-            onSignUpClick = { currentScreen = "signUp" },
-            onLogInClick = { currentScreen = "login" }
+            onSignUpClick = { navigateTo("signUp") },
+            onLogInClick = { navigateTo("login") }
         )
 
         "signUp" -> SignUpScreen(
-            onBackClick = { currentScreen = "auth" },
+            onBackClick = { goBack() },
             onSignUpClick = { fullName, email, password -> },
             onGoogleClick = { },
-            onLoginClick = { currentScreen = "login" }
+            onLoginClick = { navigateTo("login") }
         )
 
         "login" -> LoginScreen(
-            onBackClick = { currentScreen = "auth" },
+            onBackClick = { goBack() },
             onLoginClick = { email, password ->
-                currentScreen = "dashboard"
+                navigateTo("dashboard")
             },
-            onForgotPasswordClick = { currentScreen = "forgotPassword" },
+            onForgotPasswordClick = { navigateTo("forgotPassword") },
             onGoogleClick = { },
-            onSignUpClick = { currentScreen = "signUp" }
+            onSignUpClick = { navigateTo("signUp") }
         )
 
         "forgotPassword" -> ForgotPasswordScreen(
-            onBackClick = { currentScreen = "login" },
+            onBackClick = { goBack() },
             onSendCodeClick = { emailOrPhone ->
                 otpDestination = maskDestination(emailOrPhone)
-                currentScreen = "otp"
+                navigateTo("otp")
             },
-            onLoginClick = { currentScreen = "login" }
+            onLoginClick = { goBack() }
         )
 
         "otp" -> OtpVerificationScreen(
             maskedDestination = otpDestination,
-            onBackClick = { currentScreen = "forgotPassword" },
+            onBackClick = { goBack() },
             onVerifyClick = { otp ->
-                currentScreen = "createPassword"
+                navigateTo("createPassword")
             },
             onResendClick = { }
         )
 
         "createPassword" -> CreateNewPasswordScreen(
-            onBackClick = { currentScreen = "otp" },
+            onBackClick = { goBack() },
             onUpdatePasswordClick = { newPassword, confirmPassword ->
-                currentScreen = "auth"
+                navigateTo("auth")
             }
         )
 
@@ -101,17 +118,17 @@ fun AppNavigation() {
             onStartDrivingClick = {
                 isOnline = true
             },
-            onTabDashboardClick = { currentScreen = "dashboard" },
-            onTabCameraClick = { currentScreen = "liveFeed" },
-            onTabMapClick = { currentScreen = "tripHistory" },
-            onTabSettingsClick = { currentScreen = "settings" }
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
         )
 
         "liveFeed" -> LiveFeedScreen(
-            onTabDashboardClick = { currentScreen = "dashboard" },
-            onTabCameraClick = { currentScreen = "liveFeed" },
-            onTabMapClick = { currentScreen = "tripHistory" },
-            onTabSettingsClick = { currentScreen = "settings" }
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
         )
 
         "tripHistory" -> TripHistoryScreen(
@@ -119,50 +136,50 @@ fun AppNavigation() {
             onDeleteTrip = { id ->
                 trips = trips.filter { it.id != id }
             },
-            onTabDashboardClick = { currentScreen = "dashboard" },
-            onTabCameraClick = { currentScreen = "liveFeed" },
-            onTabMapClick = { currentScreen = "tripHistory" },
-            onTabSettingsClick = { currentScreen = "settings" }
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
         )
 
         "settings" -> SettingsScreen(
-            onAccountProfileClick = { currentScreen = "accountProfile" },
-            onCalibrateDeviceClick = { currentScreen = "calibrateDevice" },
-            onConfigureBuzzerClick = { currentScreen = "configureBuzzer" },
-            onArchiveClick = { currentScreen = "archive" },
-            onHelpSupportClick = { currentScreen = "helpSupport" },
-            onTabDashboardClick = { currentScreen = "dashboard" },
-            onTabCameraClick = { currentScreen = "liveFeed" },
-            onTabMapClick = { currentScreen = "tripHistory" },
-            onTabSettingsClick = { currentScreen = "settings" }
+            onAccountProfileClick = { navigateTo("accountProfile") },
+            onCalibrateDeviceClick = { navigateTo("calibrateDevice") },
+            onConfigureBuzzerClick = { navigateTo("configureBuzzer") },
+            onArchiveClick = { navigateTo("archive") },
+            onHelpSupportClick = { navigateTo("helpSupport") },
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
         )
 
         "accountProfile" -> AccountProfileScreen(
-            onBackClick = { currentScreen = "settings" },
-            onTabDashboardClick = { currentScreen = "dashboard" },
-            onTabCameraClick = { currentScreen = "liveFeed" },
-            onTabMapClick = { currentScreen = "tripHistory" },
-            onTabSettingsClick = { currentScreen = "settings" }
+            onBackClick = { goBack() },
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
         )
 
         "calibrateDevice" -> CalibrateDeviceScreen(
             isHardwareConnected = isHardwareConnected,
-            onBackClick = { currentScreen = "settings" },
+            onBackClick = { goBack() },
             onStartCalibrationClick = {
                 // TODO: actual calibration logic
             },
-            onTabDashboardClick = { currentScreen = "dashboard" },
-            onTabCameraClick = { currentScreen = "liveFeed" },
-            onTabMapClick = { currentScreen = "tripHistory" },
-            onTabSettingsClick = { currentScreen = "settings" }
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
         )
 
         "configureBuzzer" -> ConfigureBuzzerScreen(
-            onBackClick = { currentScreen = "settings" },
-            onTabDashboardClick = { currentScreen = "dashboard" },
-            onTabCameraClick = { currentScreen = "liveFeed" },
-            onTabMapClick = { currentScreen = "tripHistory" },
-            onTabSettingsClick = { currentScreen = "settings" }
+            onBackClick = { goBack() },
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
         )
 
         "archive" -> ArchiveScreen(
@@ -173,19 +190,72 @@ fun AppNavigation() {
             onDeleteEntry = { id ->
                 archiveEntries = archiveEntries.filter { it.id != id }
             },
-            onBackClick = { currentScreen = "settings" },
-            onTabDashboardClick = { currentScreen = "dashboard" },
-            onTabCameraClick = { currentScreen = "liveFeed" },
-            onTabMapClick = { currentScreen = "tripHistory" },
-            onTabSettingsClick = { currentScreen = "settings" }
+            onBackClick = { goBack() },
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
         )
 
         "helpSupport" -> HelpSupportScreen(
-            onBackClick = { currentScreen = "settings" },
-            onTabDashboardClick = { currentScreen = "dashboard" },
-            onTabCameraClick = { currentScreen = "liveFeed" },
-            onTabMapClick = { currentScreen = "tripHistory" },
-            onTabSettingsClick = { currentScreen = "settings" }
+            onBackClick = { goBack() },
+            onContactSupportClick = { navigateTo("contactSupport") },
+            onFaqClick = { /* TODO */ },
+            onReportIncidentClick = { navigateTo("reportIncident") },
+            onSuggestFeatureClick = { navigateTo("suggestFeature") },
+            onWhatSystemDetectsClick = { navigateTo("whatSystemDetects") },
+            onCameraPrivacyPolicyClick = { /* TODO */ },
+            onPrivacyPolicyClick = { /* TODO */ },
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
+        )
+
+        "contactSupport" -> ContactSupportScreen(
+            onBackClick = { goBack() },
+            onSubmitMessage = { category, message ->
+                // TODO: actual submit logic (call API, save to database, etc.)
+            },
+            onAttachFileClick = {
+                // TODO: file picker logic
+            },
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
+        )
+
+        "reportIncident" -> ReportIncidentScreen(
+            onBackClick = { goBack() },
+            onSubmitReport = { incidentType, description ->
+                // TODO: actual submit logic (call API, save to database, etc.)
+            },
+            onAttachFileClick = {
+                // TODO: file picker logic
+            },
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
+        )
+
+        "suggestFeature" -> SuggestFeatureScreen(
+            onBackClick = { goBack() },
+            onSubmitIdea = { featureTitle, description ->
+                // TODO: actual submit logic (call API, save to database, etc.)
+            },
+            onAttachFileClick = {
+                // TODO: file picker logic
+            },
+            onTabDashboardClick = { navigateTo("dashboard") },
+            onTabCameraClick = { navigateTo("liveFeed") },
+            onTabMapClick = { navigateTo("tripHistory") },
+            onTabSettingsClick = { navigateTo("settings") }
+        )
+
+        "whatSystemDetects" -> WhatSystemDetectsScreen(
+            onBackClick = { goBack() }
         )
     }
 }
