@@ -2,8 +2,10 @@ package com.example.d_r_i_v_e.frontend
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.d_r_i_v_e.TripEntry
 import com.example.d_r_i_v_e.Incident
+import com.example.d_r_i_v_e.backend.AuthViewModel
 
 @Composable
 fun AppNavigation() {
@@ -59,6 +61,9 @@ fun AppNavigation() {
         )
     }
 
+    val authViewModel: AuthViewModel = viewModel()
+    val signUpUiState by authViewModel.uiState.collectAsState()
+
     when (currentScreen) {
         "onboarding" -> OnboardingScreen(
             onFinished = { navigateTo("auth") },
@@ -71,17 +76,22 @@ fun AppNavigation() {
         )
 
         "signUp" -> SignUpScreen(
+            uiState = signUpUiState,
             onBackClick = { goBack() },
-            onSignUpClick = { fullName, email, password -> },
+            onSignUpClick = { fullName, email, password, confirmPassword ->
+                authViewModel.signup(fullName, email, password, confirmPassword)
+            },
+            onDismissDialog = {
+                authViewModel.dismissDialog()
+            },
             onGoogleClick = { },
             onLoginClick = { navigateTo("login") }
         )
 
         "login" -> LoginScreen(
+            authViewModel = authViewModel,
             onBackClick = { goBack() },
-            onLoginClick = { email, password ->
-                navigateTo("dashboard")
-            },
+            onLoginSuccess = { navigateTo("dashboard") },
             onForgotPasswordClick = { navigateTo("forgotPassword") },
             onGoogleClick = { },
             onSignUpClick = { navigateTo("signUp") }

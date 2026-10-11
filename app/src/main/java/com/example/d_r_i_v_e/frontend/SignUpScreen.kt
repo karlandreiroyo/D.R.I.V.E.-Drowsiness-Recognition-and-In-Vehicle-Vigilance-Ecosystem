@@ -9,19 +9,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,11 +25,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.d_r_i_v_e.backend.SignUpUiState
 
 @Composable
 fun SignUpScreen(
+    uiState: SignUpUiState = SignUpUiState.Idle,
     onBackClick: () -> Unit,
-    onSignUpClick: (fullName: String, email: String, password: String) -> Unit,
+    onSignUpClick: (fullName: String, email: String, password: String, confirmPassword: String) -> Unit,
+    onDismissDialog: () -> Unit = {},
     onGoogleClick: () -> Unit,
     onLoginClick: () -> Unit
 ) {
@@ -50,6 +44,94 @@ fun SignUpScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var isAgreed by remember { mutableStateOf(false) }
+
+    // Alert Dialog for Backend Validation Errors / Connection Errors / Success Messages
+    when (uiState) {
+        is SignUpUiState.ValidationError -> {
+            AlertDialog(
+                onDismissRequest = onDismissDialog,
+                title = {
+                    Text(
+                        text = "Validation Error",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                },
+                text = {
+                    Text(
+                        text = uiState.message,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = onDismissDialog) {
+                        Text("OK", color = Color(0xFF6C7BFF), fontWeight = FontWeight.Bold)
+                    }
+                },
+                containerColor = Color(0xFF2C2C2E),
+                titleContentColor = Color.White,
+                textContentColor = Color.White
+            )
+        }
+        is SignUpUiState.ConnectionError -> {
+            AlertDialog(
+                onDismissRequest = onDismissDialog,
+                title = {
+                    Text(
+                        text = "Connection Error",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                },
+                text = {
+                    Text(
+                        text = uiState.message,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = onDismissDialog) {
+                        Text("OK", color = Color(0xFF6C7BFF), fontWeight = FontWeight.Bold)
+                    }
+                },
+                containerColor = Color(0xFF2C2C2E),
+                titleContentColor = Color.White,
+                textContentColor = Color.White
+            )
+        }
+        is SignUpUiState.Success -> {
+            AlertDialog(
+                onDismissRequest = onDismissDialog,
+                title = {
+                    Text(
+                        text = "Success",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                },
+                text = {
+                    Text(
+                        text = uiState.message,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            onDismissDialog()
+                            onLoginClick()
+                        }
+                    ) {
+                        Text("Proceed to Login", color = Color(0xFF6C7BFF), fontWeight = FontWeight.Bold)
+                    }
+                },
+                containerColor = Color(0xFF2C2C2E),
+                titleContentColor = Color.White,
+                textContentColor = Color.White
+            )
+        }
+        else -> {}
+    }
 
     Box(
         modifier = Modifier
@@ -65,20 +147,25 @@ fun SignUpScreen(
         ) {
 
             // Back button
-            IconButton(
-                onClick = onBackClick,
+            Row(
                 modifier = Modifier
-                    .padding(top = 8.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.1f))
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(start = 8.dp, top = 8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White
-                )
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.1f))
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White
+                    )
+                }
             }
-
             Spacer(modifier = Modifier.height(24.dp))
 
             // Title Header
@@ -236,8 +323,8 @@ fun SignUpScreen(
 
             // Signup button
             Button(
-                onClick = { onSignUpClick(fullName, email, password) },
-                enabled = isAgreed,
+                onClick = { onSignUpClick(fullName, email, password, confirmPassword) },
+                enabled = isAgreed && uiState !is SignUpUiState.Loading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -247,12 +334,20 @@ fun SignUpScreen(
                     disabledContainerColor = Color(0xFF0F0B94).copy(alpha = 0.5f)
                 )
             ) {
-                Text(
-                    text = "Signup",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+                if (uiState is SignUpUiState.Loading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = "Signup",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

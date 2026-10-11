@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,10 +39,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-// Hardcoded account ( since wala pang database at backend)
-private const val VALID_USERNAME = "karlandrei"
-private const val VALID_PASSWORD = "Karl@111"
 
 @Composable
 fun GoogleLogo(modifier: Modifier = Modifier) {
@@ -88,8 +85,9 @@ fun GoogleLogo(modifier: Modifier = Modifier) {
 
 @Composable
 fun LoginScreen(
+    authViewModel: AuthViewModel,
     onBackClick: () -> Unit,
-    onLoginClick: (email: String, password: String) -> Unit,
+    onLoginSuccess: () -> Unit,
     onForgotPasswordClick: () -> Unit,
     onGoogleClick: () -> Unit,
     onSignUpClick: () -> Unit
@@ -97,7 +95,6 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Box(
         modifier = Modifier
@@ -109,8 +106,6 @@ fun LoginScreen(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.systemBars)
         ) {
-
-            // Back button
             IconButton(
                 onClick = onBackClick,
                 modifier = Modifier
@@ -124,7 +119,6 @@ fun LoginScreen(
                     tint = Color.White
                 )
             }
-
 
             Column(
                 modifier = Modifier
@@ -157,17 +151,16 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Email / Phone field
                 OutlinedTextField(
                     value = email,
                     onValueChange = {
                         email = it
-                        errorMessage = null
+                        authViewModel.loginError = null
                     },
                     placeholder = { Text("Enter Email or Phone", color = Color.White.copy(alpha = 0.5f)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    isError = errorMessage != null,
+                    isError = authViewModel.loginError != null,
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color(0xFF2C2C2E),
@@ -186,18 +179,17 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Password field
                 OutlinedTextField(
                     value = password,
                     onValueChange = {
                         password = it
-                        errorMessage = null
+                        authViewModel.loginError = null
                     },
                     placeholder = { Text("Enter Password", color = Color.White.copy(alpha = 0.5f)) },
                     singleLine = true,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    isError = errorMessage != null,
+                    isError = authViewModel.loginError != null,
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
@@ -226,10 +218,10 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                if (errorMessage != null) {
+                authViewModel.loginError?.let { error ->
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = errorMessage ?: "",
+                        text = error,
                         color = Color(0xFFFF4C4C),
                         fontSize = 12.sp,
                         modifier = Modifier.fillMaxWidth()
@@ -251,25 +243,27 @@ fun LoginScreen(
 
                 Button(
                     onClick = {
-                        if (email == VALID_USERNAME && password == VALID_PASSWORD) {
-                            errorMessage = null
-                            onLoginClick(email, password)
-                        } else {
-                            errorMessage = "Wrong password. Please try again."
+                        authViewModel.loginUser(email, password) {
+                            onLoginSuccess()
                         }
                     },
+                    enabled = !authViewModel.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
                     shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F0B94))
                 ) {
-                    Text(
-                        text = "Login",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    if (authViewModel.isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text(
+                            text = "Login",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(28.dp))
