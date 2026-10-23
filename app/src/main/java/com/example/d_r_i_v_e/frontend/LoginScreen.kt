@@ -39,6 +39,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.d_r_i_v_e.backend.AuthViewModel
 
 @Composable
 fun GoogleLogo(modifier: Modifier = Modifier) {
@@ -76,7 +77,7 @@ fun GoogleLogo(modifier: Modifier = Modifier) {
         drawPath(blueArcPath, Color(0xFF4285F4), style = Stroke(strokeWidth, cap = StrokeCap.Butt))
 
         val blueBarPath = Path().apply {
-            moveTo(center.x - 2f, center.y)
+            moveTo(center.x / 2f, center.y)
             lineTo(center.x + radius + (strokeWidth / 2f), center.y)
         }
         drawPath(blueBarPath, Color(0xFF4285F4), style = Stroke(strokeWidth, cap = StrokeCap.Butt))
@@ -95,6 +96,9 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    val isLoading by authViewModel.isLoading.collectAsState()
+    val loginError by authViewModel.loginError.collectAsState()
 
     Box(
         modifier = Modifier
@@ -155,12 +159,12 @@ fun LoginScreen(
                     value = email,
                     onValueChange = {
                         email = it
-                        authViewModel.loginError = null
+                        authViewModel.dismissDialog()
                     },
                     placeholder = { Text("Enter Email or Phone", color = Color.White.copy(alpha = 0.5f)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    isError = authViewModel.loginError != null,
+                    isError = loginError != null,
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color(0xFF2C2C2E),
@@ -183,13 +187,13 @@ fun LoginScreen(
                     value = password,
                     onValueChange = {
                         password = it
-                        authViewModel.loginError = null
+                        authViewModel.dismissDialog()
                     },
                     placeholder = { Text("Enter Password", color = Color.White.copy(alpha = 0.5f)) },
                     singleLine = true,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    isError = authViewModel.loginError != null,
+                    isError = loginError != null,
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
@@ -218,7 +222,7 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                authViewModel.loginError?.let { error ->
+                loginError?.let { error ->
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = error,
@@ -247,14 +251,14 @@ fun LoginScreen(
                             onLoginSuccess()
                         }
                     },
-                    enabled = !authViewModel.isLoading,
+                    enabled = !isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
                     shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F0B94))
                 ) {
-                    if (authViewModel.isLoading) {
+                    if (isLoading) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                     } else {
                         Text(

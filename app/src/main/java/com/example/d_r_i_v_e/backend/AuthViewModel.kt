@@ -1,115 +1,100 @@
 package com.example.d_r_i_v_e.backend
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed interface SignUpUiState {
-    object Idle : SignUpUiState
-    object Loading : SignUpUiState
-    data class Success(val message: String) : SignUpUiState
-    data class ValidationError(val message: String) : SignUpUiState
-    data class ConnectionError(val message: String) : SignUpUiState
-}
+class AuthViewModel : ViewModel() {
 
-class AuthViewModel(
-    private val apiService: AuthApiService = AuthApiService.create()
-) : ViewModel() {
-
-    // SignUp State
     private val _uiState = MutableStateFlow<SignUpUiState>(SignUpUiState.Idle)
     val uiState: StateFlow<SignUpUiState> = _uiState.asStateFlow()
 
-    // Login State
-    var loginError by mutableStateOf<String?>(null)
-    var isLoading by mutableStateOf(false)
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    fun signup(fullName: String, email: String, password: String, confirmPassword: String) {
+    private val _loginError = MutableStateFlow<String?>(null)
+    val loginError: StateFlow<String?> = _loginError.asStateFlow()
+
+    fun signup(
+        fullName: String,
+        email: String,
+        phoneNumber: String,
+        password: String,
+        confirmPassword: String,
+        emergencyName: String,
+        emergencyPhone: String,
+        vehicleType: String,
+        plateNumber: String
+    ) {
+        if (password != confirmPassword) {
+            _uiState.value = SignUpUiState.ValidationError("Passwords do not match.")
+            return
+        }
+
         viewModelScope.launch {
             _uiState.value = SignUpUiState.Loading
             try {
                 val request = SignUpRequest(
-                    fullName = fullName.trim(),
-                    email = email.trim(),
+                    fullName = fullName,
+                    email = email,
+                    phoneNumber = phoneNumber,
                     password = password,
-                    confirmPassword = confirmPassword
+                    confirmPassword = confirmPassword,
+                    emergencyName = emergencyName,
+                    emergencyPhone = emergencyPhone,
+                    vehicleType = vehicleType,
+                    plateNumber = plateNumber
                 )
-                val response = apiService.signup(request)
 
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    val msg = body?.message ?: "Signup successful!"
-                    _uiState.value = SignUpUiState.Success(msg)
+                val response = AuthApiService.create().signup(request)
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    _uiState.value = SignUpUiState.Success(
+                        response.body()?.message ?: "Account successfully created!"
+                    )
                 } else {
-                    val errorJson = response.errorBody()?.string()
-                    val parsedError = try {
-                        Gson().fromJson(errorJson, SignUpResponse::class.java)
-                    } catch (e: Exception) {
-                        null
-                    }
-
-                    val message = parsedError?.message
-                        ?: parsedError?.errors?.firstOrNull()?.message
-                        ?: "Validation failed. Please check your inputs."
-
-                    _uiState.value = SignUpUiState.ValidationError(message)
+                    val errorMsg = response.body()?.message ?: "Registration failed."
+                    _uiState.value = SignUpUiState.ValidationError(errorMsg)
                 }
             } catch (e: Exception) {
-                val friendlyMessage = "Unable to connect to the backend server.\n\n" +
-                        "1. Ensure your Node.js backend is running (`npm run dev`).\n" +
-                        "2. If using a physical Android device, run this command in terminal:\n" +
-                        "adb reverse tcp:5000 tcp:5000"
-
-                _uiState.value = SignUpUiState.ConnectionError(friendlyMessage)
+                _uiState.value = SignUpUiState.ConnectionError(
+                    e.localizedMessage ?: "Failed to connect to server."
+                )
             }
         }
     }
 
-    fun loginUser(emailOrPhone: String, password: String, onSuccess: () -> Unit) {
-        if (emailOrPhone.isBlank() || password.isBlank()) {
-            loginError = "Please fill in all fields."
+    fun loginUser(email: String, password: String, onSuccess: () -> Unit) {
+        if (email.isBlank() || password.isBlank()) {
+            _loginError.value = "Email and password cannot be empty."
             return
         }
 
-        isLoading = true
-        loginError = null
-
         viewModelScope.launch {
+            _isLoading.value = true
+            _loginError.value = null
             try {
-                val bodyMap = mapOf(
-                    "email" to emailOrPhone.trim(),
-                    "password" to password
-                )
-                val response = apiService.login(bodyMap)
+                val credentials = mapOf("email" to email, "password" to password)
+                val response = AuthApiService.create().login(credentials)
 
-                isLoading = false
+                _isLoading.value = false
                 if (response.isSuccessful && response.body()?.success == true) {
-                    loginError = null
                     onSuccess()
                 } else {
-                    val errorJson = response.errorBody()?.string()
-                    val parsedError = try {
-                        Gson().fromJson(errorJson, SignUpResponse::class.java)
-                    } catch (e: Exception) {
-                        null
-                    }
-                    loginError = parsedError?.message ?: "Invalid email or password."
+                    _loginError.value = response.body()?.message ?: "Invalid email or password."
                 }
             } catch (e: Exception) {
-                isLoading = false
-                loginError = "Cannot connect to server. Ensure your backend is running."
+                _isLoading.value = false
+                _loginError.value = e.localizedMessage ?: "Login failed. Please try again."
             }
         }
     }
 
     fun dismissDialog() {
         _uiState.value = SignUpUiState.Idle
+        _loginError.value = null
     }
 }

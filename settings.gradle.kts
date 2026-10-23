@@ -1,3 +1,15 @@
+if (System.getenv("ANDROID_PREFS_ROOT") != null && System.getenv("ANDROID_USER_HOME") != null) {
+    try {
+        val pe = Class.forName("java.lang.ProcessEnvironment")
+        val caseInsensitiveField = pe.getDeclaredField("theCaseInsensitiveEnvironment")
+        caseInsensitiveField.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        val map = caseInsensitiveField.get(null) as MutableMap<String, String>
+        map.remove("ANDROID_PREFS_ROOT")
+    } catch (_: Exception) {
+    }
+}
+
 pluginManagement {
     repositories {
         google {

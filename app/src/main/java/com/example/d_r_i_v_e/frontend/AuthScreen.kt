@@ -38,7 +38,7 @@ fun AuthScreen(
         ) {
 
             Image(
-                painter = painterResource(id = R.drawable.project_logo),
+                painter = painterResource(id = R.drawable.ic_launcher_foreground),
                 contentDescription = "D.R.I.V.E. Logo",
                 modifier = Modifier
                     .size(180.dp)

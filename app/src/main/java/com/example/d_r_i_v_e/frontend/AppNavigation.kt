@@ -30,6 +30,12 @@ fun AppNavigation() {
     var isOnline by remember { mutableStateOf(false) }
     var isHardwareConnected by remember { mutableStateOf(false) }
 
+    var selectedGoogleAccount by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val startGoogleSignIn = rememberGoogleSignIn { name, email ->
+        selectedGoogleAccount = Pair(name, email)
+        navigateTo("driverRegistration")
+    }
+
     var trips by remember {
         mutableStateOf(
             listOf(
@@ -78,13 +84,25 @@ fun AppNavigation() {
         "signUp" -> SignUpScreen(
             uiState = signUpUiState,
             onBackClick = { goBack() },
-            onSignUpClick = { fullName, email, password, confirmPassword ->
-                authViewModel.signup(fullName, email, password, confirmPassword)
+            onSignUpClick = { fullName, email, phoneNumber, password, confirmPassword,
+                              emergencyName, emergencyPhone, vehicleType, plateNumber ->
+                // Naayos na rito: Naipapasa na ang lahat ng kinakailangang parameter patungo sa ViewModel
+                authViewModel.signup(
+                    fullName = fullName,
+                    email = email,
+                    phoneNumber = phoneNumber,
+                    password = password,
+                    confirmPassword = confirmPassword,
+                    emergencyName = emergencyName,
+                    emergencyPhone = emergencyPhone,
+                    vehicleType = vehicleType,
+                    plateNumber = plateNumber
+                )
             },
             onDismissDialog = {
                 authViewModel.dismissDialog()
             },
-            onGoogleClick = { },
+            onGoogleClick = { startGoogleSignIn() },
             onLoginClick = { navigateTo("login") }
         )
 
@@ -93,8 +111,17 @@ fun AppNavigation() {
             onBackClick = { goBack() },
             onLoginSuccess = { navigateTo("dashboard") },
             onForgotPasswordClick = { navigateTo("forgotPassword") },
-            onGoogleClick = { },
+            onGoogleClick = { startGoogleSignIn() },
             onSignUpClick = { navigateTo("signUp") }
+        )
+
+        "driverRegistration" -> DriverRegistrationScreen(
+            googleName = selectedGoogleAccount?.first ?: "",
+            googleEmail = selectedGoogleAccount?.second ?: "",
+            onBackClick = { goBack() },
+            onCompleteRegistration = { profile ->
+                navigateTo("dashboard")
+            }
         )
 
         "forgotPassword" -> ForgotPasswordScreen(
@@ -175,9 +202,7 @@ fun AppNavigation() {
         "calibrateDevice" -> CalibrateDeviceScreen(
             isHardwareConnected = isHardwareConnected,
             onBackClick = { goBack() },
-            onStartCalibrationClick = {
-                // TODO: actual calibration logic
-            },
+            onStartCalibrationClick = { },
             onTabDashboardClick = { navigateTo("dashboard") },
             onTabCameraClick = { navigateTo("liveFeed") },
             onTabMapClick = { navigateTo("tripHistory") },
@@ -194,9 +219,7 @@ fun AppNavigation() {
 
         "archive" -> ArchiveScreen(
             entries = archiveEntries,
-            onRestoreEntry = { id ->
-                // TODO: actual restore logic
-            },
+            onRestoreEntry = { id -> },
             onDeleteEntry = { id ->
                 archiveEntries = archiveEntries.filter { it.id != id }
             },
@@ -210,12 +233,12 @@ fun AppNavigation() {
         "helpSupport" -> HelpSupportScreen(
             onBackClick = { goBack() },
             onContactSupportClick = { navigateTo("contactSupport") },
-            onFaqClick = { /* TODO */ },
+            onFaqClick = { },
             onReportIncidentClick = { navigateTo("reportIncident") },
             onSuggestFeatureClick = { navigateTo("suggestFeature") },
             onWhatSystemDetectsClick = { navigateTo("whatSystemDetects") },
-            onCameraPrivacyPolicyClick = { /* TODO */ },
-            onPrivacyPolicyClick = { /* TODO */ },
+            onCameraPrivacyPolicyClick = { },
+            onPrivacyPolicyClick = { },
             onTabDashboardClick = { navigateTo("dashboard") },
             onTabCameraClick = { navigateTo("liveFeed") },
             onTabMapClick = { navigateTo("tripHistory") },
@@ -224,12 +247,8 @@ fun AppNavigation() {
 
         "contactSupport" -> ContactSupportScreen(
             onBackClick = { goBack() },
-            onSubmitMessage = { category, message ->
-                // TODO: actual submit logic (call API, save to database, etc.)
-            },
-            onAttachFileClick = {
-                // TODO: file picker logic
-            },
+            onSubmitMessage = { category, message -> },
+            onAttachFileClick = { },
             onTabDashboardClick = { navigateTo("dashboard") },
             onTabCameraClick = { navigateTo("liveFeed") },
             onTabMapClick = { navigateTo("tripHistory") },
@@ -238,12 +257,8 @@ fun AppNavigation() {
 
         "reportIncident" -> ReportIncidentScreen(
             onBackClick = { goBack() },
-            onSubmitReport = { incidentType, description ->
-                // TODO: actual submit logic (call API, save to database, etc.)
-            },
-            onAttachFileClick = {
-                // TODO: file picker logic
-            },
+            onSubmitReport = { incidentType, description -> },
+            onAttachFileClick = { },
             onTabDashboardClick = { navigateTo("dashboard") },
             onTabCameraClick = { navigateTo("liveFeed") },
             onTabMapClick = { navigateTo("tripHistory") },
@@ -252,12 +267,8 @@ fun AppNavigation() {
 
         "suggestFeature" -> SuggestFeatureScreen(
             onBackClick = { goBack() },
-            onSubmitIdea = { featureTitle, description ->
-                // TODO: actual submit logic (call API, save to database, etc.)
-            },
-            onAttachFileClick = {
-                // TODO: file picker logic
-            },
+            onSubmitIdea = { featureTitle, description -> },
+            onAttachFileClick = { },
             onTabDashboardClick = { navigateTo("dashboard") },
             onTabCameraClick = { navigateTo("liveFeed") },
             onTabMapClick = { navigateTo("tripHistory") },
