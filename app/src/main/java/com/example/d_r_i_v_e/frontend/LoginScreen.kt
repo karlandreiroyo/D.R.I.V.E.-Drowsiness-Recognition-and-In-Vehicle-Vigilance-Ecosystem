@@ -1,5 +1,6 @@
 package com.example.d_r_i_v_e.frontend
 
+import android.content.Context
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,15 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -93,8 +87,14 @@ fun LoginScreen(
     onGoogleClick: () -> Unit,
     onSignUpClick: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val sharedPreferences = remember {
+        context.getSharedPreferences("VigilLoginPrefs", Context.MODE_PRIVATE)
+    }
+
+    var email by remember { mutableStateOf(sharedPreferences.getString("saved_email", "") ?: "") }
+    var password by remember { mutableStateOf(sharedPreferences.getString("saved_password", "") ?: "") }
+    var rememberMe by remember { mutableStateOf(sharedPreferences.getBoolean("remember_me", false)) }
     var passwordVisible by remember { mutableStateOf(false) }
 
     val isLoading by authViewModel.isLoading.collectAsState()
@@ -232,21 +232,58 @@ fun LoginScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Text(
-                    text = "Forgot Password",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .clickable { onForgotPasswordClick() }
-                )
+                // --- Remember Password Checkbox & Forgot Password Row ---
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { rememberMe = !rememberMe }
+                    ) {
+                        Checkbox(
+                            checked = rememberMe,
+                            onCheckedChange = { rememberMe = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = Color(0xFF6C7BFF),
+                                uncheckedColor = Color.White.copy(alpha = 0.6f),
+                                checkmarkColor = Color.White
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Remember password",
+                            color = Color.White.copy(alpha = 0.8f),
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    Text(
+                        text = "Forgot Password",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        modifier = Modifier.clickable { onForgotPasswordClick() }
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
                     onClick = {
+                        if (rememberMe) {
+                            sharedPreferences.edit().apply {
+                                putString("saved_email", email)
+                                putString("saved_password", password)
+                                putBoolean("remember_me", true)
+                                apply()
+                            }
+                        } else {
+                            sharedPreferences.edit().clear().apply()
+                        }
+
                         authViewModel.loginUser(email, password) {
                             onLoginSuccess()
                         }
