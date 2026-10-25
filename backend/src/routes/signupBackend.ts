@@ -1,215 +1,205 @@
 import { Router, Request, Response } from 'express';
-import { body, validationResult } from 'express-validator';
+import bcrypt from 'bcrypt';
+import { supabase } from './supabaseclient.js';
 
 const router: Router = Router();
 
-interface User {
-    fullName: string;
-    contact: string; // normalized lower-case email or phone number
-    password: string;
-    createdAt: string;
-}
-
-// In-memory array storing registered users during backend session
-const registeredUsers: User[] = [];
-
-// Helper to validate Philippine phone numbers (09xxxxxxxxx or +639xxxxxxxxx)
 const isPHPhoneNumber = (phone: string): boolean => {
     return /^(09|\+639)\d{9}$/.test(phone);
 };
 
-// Helper to validate email format
 const isValidEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
-/**
- * @route   GET /api/auth/users
- * @desc    Get list of all registered users (Debug/Inspection Endpoint)
- * @access  Public
- */
-router.get('/users', (_req: Request, res: Response) => {
-    return res.status(200).json({
-        success: true,
-        count: registeredUsers.length,
-        users: registeredUsers.map(u => ({
-            fullName: u.fullName,
-            contact: u.contact,
-            createdAt: u.createdAt
-        }))
-    });
-});
+const isValidPassword = (password: string): boolean => {
+    if (password.length < 8) return false;
+    const hasLowercase = /[a-z]/.test(password);
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+    return hasLowercase && hasUppercase && hasNumber && hasSpecial;
+};
 
 /**
  * @route   POST /api/auth/signup
- * @desc    Register a new user with strict validation
+ * @desc    Register a new user in Supabase
  * @access  Public
  */
-router.post(
-    '/signup',
-    [
-        // 1. Full Name Validation
-        body('fullName')
-            .trim()
-            .notEmpty().withMessage('Full name is required.')
-            .isLength({ min: 1, max: 50 }).withMessage('Full name must be between 1 and 50 characters long.'),
-
-        // 2. Email or Phone Number Validation
-        body('email')
-            .custom((value, { req }) => {
-                const contact = String(value || req.body?.emailOrPhone || req.body?.identifier || '').trim();
-
-                if (!contact) {
-                    throw new Error('Please enter your email address or phone number.');
-                }
-
-                const isEmail = isValidEmail(contact);
-                const isPhone = isPHPhoneNumber(contact);
-
-                if (!isEmail && !isPhone) {
-                    throw new Error('Enter a valid email address or Philippine phone number (09xxxxxxxxx or +639xxxxxxxxx).');
-                }
-                return true;
-            }),
-
-        // 3. Password Validation
-        body('password')
-            .notEmpty().withMessage('Password is required.')
-            .isStrongPassword({
-                minLength: 8,
-                minLowercase: 1,
-                minUppercase: 1,
-                minNumbers: 1,
-                minSymbols: 1
-            })
-            .withMessage('Password must be at least 8 characters long and include 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.'),
-
-        // 4. Confirm Password Validation
-        body('confirmPassword')
-            .notEmpty().withMessage('Please confirm your password.')
-            .custom((value: string, { req }) => {
-                if (value !== req.body?.password) {
-                    throw new Error('Confirm password does not match password.');
-                }
-                return true;
-            })
-    ],
-    (req: Request, res: Response): Response => {
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            const firstErrorMsg = errors.array()[0]?.msg || 'Validation failed.';
-            const formattedErrors = errors.array().map((err) => ({
-                field: err.type === 'field' ? err.path : 'general',
-                message: err.msg
-            }));
-
-            return res.status(400).json({
-                success: false,
-                message: firstErrorMsg,
-                errors: formattedErrors
-            });
-        }
-
-        const { fullName, email, emailOrPhone, identifier, password } = req.body;
-        const rawContact = String(email || emailOrPhone || identifier || '').trim();
-        const normalizedContact = rawContact.toLowerCase();
-
-        // Check if user already exists
-        const existingUser = registeredUsers.find(u => u.contact === normalizedContact);
-        if (existingUser) {
-            return res.status(400).json({
-                success: false,
-                message: 'An account with this email or phone number already exists.'
-            });
-        }
-
-        // Store new user in memory
-        const newUser: User = {
-            fullName: fullName.trim(),
-            contact: normalizedContact,
+router.post('/signup', async (req: Request, res: Response): Promise<Response> => {
+    try {
+        const {
+            fullName,
+            email,
+            phoneNumber,
             password,
-            createdAt: new Date().toISOString()
+            emergencyName,
+            emergencyPhone,
+            vehicleType,
+            plateNumber
+        } = req.body;
+
+        // Input Validation
+        if (!fullName || typeof fullName !== 'string' || !fullName.trim()) {
+            return res.status(400).json({ success: false, message: 'Full name is required.' });
+        }
+
+        if (!email || typeof email !== 'string' || !isValidEmail(email.trim())) {
+            return res.status(400).json({ success: false, message: 'Invalid email address format.' });
+        }
+
+        const trimmedPhone = typeof phoneNumber === 'string' ? phoneNumber.trim() : '';
+        if (!trimmedPhone || !isPHPhoneNumber(trimmedPhone)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid Philippine phone number format. Must start with 09 or +639 followed by 9 digits.'
+            });
+        }
+
+        if (!password || typeof password !== 'string' || !isValidPassword(password)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.'
+            });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
+        // 2. Reject duplicate email or phone number in Supabase (HTTP 409)
+        const { data: existingUser, error: checkError } = await supabase
+            .from('users')
+            .select('email, phone_number')
+            .or(`email.eq.${normalizedEmail},phone_number.eq.${trimmedPhone}`)
+            .maybeSingle();
+
+        if (checkError) {
+            console.error('Supabase query error checking existing user:', checkError);
+            return res.status(500).json({
+                success: false,
+                message: 'Database query error: ' + checkError.message
+            });
+        }
+
+        if (existingUser) {
+            if (existingUser.email?.toLowerCase() === normalizedEmail) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'Email is already registered'
+                });
+            }
+            if (existingUser.phone_number === trimmedPhone) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'Phone number is already registered'
+                });
+            }
+            return res.status(409).json({
+                success: false,
+                message: 'Email or phone number is already registered'
+            });
+        }
+
+        // 3. Hash password using bcrypt
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // 4. Insert user into Supabase `users` table
+        const insertPayload: any = {
+            full_name: fullName.trim(),
+            email: normalizedEmail,
+            phone_number: trimmedPhone,
+            password: hashedPassword
         };
 
-        registeredUsers.push(newUser);
+        if (emergencyName) insertPayload.emergency_name = String(emergencyName).trim();
+        if (emergencyPhone) insertPayload.emergency_phone = String(emergencyPhone).trim();
+        if (vehicleType) insertPayload.vehicle_type = String(vehicleType).trim();
+        if (plateNumber) insertPayload.vehicle_plate_number = String(plateNumber).trim();
 
-        console.log('✅ New User Registered:', newUser);
-        console.log('📋 Current Registered Users List:', registeredUsers);
+        const { error: insertError } = await supabase
+            .from('users')
+            .insert([insertPayload]);
 
+        if (insertError) {
+            console.error('Supabase Insert Error:', insertError);
+            return res.status(500).json({
+                success: false,
+                message: 'Database insert error: ' + insertError.message
+            });
+        }
+
+        // 5. Return success JSON
         return res.status(200).json({
             success: true,
-            message: 'Signup successful!',
-            user: {
-                fullName: newUser.fullName,
-                contact: rawContact
-            }
+            message: 'Account registered successfully'
+        });
+
+    } catch (err: any) {
+        console.error('Signup exception error:', err);
+        return res.status(500).json({
+            success: false,
+            message: 'Server error: ' + (err.message || 'An unexpected error occurred')
         });
     }
-);
+});
 
 /**
  * @route   POST /api/auth/login
- * @desc    Authenticate registered user
+ * @desc    Authenticate user login via Supabase and bcrypt
  * @access  Public
  */
-router.post(
-    '/login',
-    [
-        body()
-            .custom((_, { req }) => {
-                const contact = String(req.body?.email || req.body?.emailOrPhone || req.body?.identifier || '').trim();
-                if (!contact) {
-                    throw new Error('Please enter your email address or phone number.');
-                }
-                if (!req.body?.password) {
-                    throw new Error('Please enter your password.');
-                }
-                return true;
-            })
-    ],
-    (req: Request, res: Response): Response => {
-        const errors = validationResult(req);
+router.post('/login', async (req: Request, res: Response): Promise<Response> => {
+    try {
+        const { email, password } = req.body;
 
-        if (!errors.isEmpty()) {
-            const firstMsg = errors.array()[0]?.msg || 'Login failed.';
-            return res.status(400).json({
-                success: false,
-                message: firstMsg
-            });
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: 'Email and password are required.' });
         }
 
-        const inputContact = String(req.body.email || req.body.emailOrPhone || req.body.identifier || '').trim().toLowerCase();
-        const inputPassword = String(req.body.password || '');
+        const normalizedEmail = email.trim().toLowerCase();
 
-        // Find registered user in memory
-        const user = registeredUsers.find(u => u.contact === inputContact);
+        // 1. Hanapin ang user sa Supabase gamit ang email
+        const { data: user, error: queryError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', normalizedEmail)
+            .maybeSingle();
+
+        if (queryError) {
+            console.error('Supabase login query error:', queryError);
+            return res.status(500).json({ success: false, message: 'Database error occurred.' });
+        }
 
         if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Account not found. Please sign up first.'
-            });
+            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
         }
 
-        if (user.password !== inputPassword) {
-            return res.status(401).json({
-                success: false,
-                message: 'Incorrect password. Please try again.'
-            });
+        // 2. I-compare ang password gamit ang bcrypt.compare
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
         }
 
-        console.log('🔑 User Logged In:', user.contact);
-
+        // 3. Matagumpay na login
         return res.status(200).json({
             success: true,
-            message: 'Login successful!',
+            message: 'Login successful',
             user: {
-                fullName: user.fullName,
-                contact: user.contact
+                fullName: user.full_name,
+                email: user.email,
+                phoneNumber: user.phone_number,
+                vehicleType: user.vehicle_type,
+                plateNumber: user.vehicle_plate_number
             }
         });
+
+    } catch (err: any) {
+        console.error('Login exception error:', err);
+        return res.status(500).json({
+            success: false,
+            message: 'Server error: ' + (err.message || 'An unexpected error occurred')
+        });
     }
-);
+});
 
 export default router;

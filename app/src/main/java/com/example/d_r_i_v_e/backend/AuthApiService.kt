@@ -12,13 +12,16 @@ import java.util.concurrent.TimeUnit
 
 interface AuthApiService {
     @POST("api/auth/signup")
-    suspend fun signup(@Body request: SignUpRequest): Response<SignUpResponse>
+    suspend fun signUp(@Body request: SignUpRequest): Response<SignUpResponse>
+
+    @POST("api/auth/signup")
+    suspend fun driverSignUp(@Body request: DriverSignUpRequest): Response<SignUpResponse>
 
     @POST("api/auth/login")
-    suspend fun login(@Body request: Map<String, String>): Response<SignUpResponse>
+    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
     companion object {
-        private const val LOCAL_IP_URL = "http://192.168.254.114:5000/"
+        private const val LOCAL_IP_URL = "http://192.168.254.116:5000/"
         private const val EMULATOR_URL = "http://10.0.2.2:5000/"
 
         private fun isEmulator(): Boolean {

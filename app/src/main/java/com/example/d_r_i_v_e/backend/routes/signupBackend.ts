@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { body, validationResult } from 'express-validator';
-import { supabase } from '../supabaseClient.js'; // I-adjust ang path kung kinakailangan
+import bcrypt from 'bcrypt';
+import { supabase } from './supabaseclient.js';
 
 const router: Router = Router();
 
@@ -12,48 +12,22 @@ const isValidEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
-// GET: Kunin ang lahat ng users mula sa Supabase
-router.get('/users', async (_req: Request, res: Response): Promise<Response> => {
+const isValidPassword = (password: string): boolean => {
+    if (password.length < 8) return false;
+    const hasLowercase = /[a-z]/.test(password);
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+    return hasLowercase && hasUppercase && hasNumber && hasSpecial;
+};
+
+/**
+ * @route   POST /api/auth/signup
+ * @desc    Register a new user in Supabase
+ * @access  Public
+ */
+router.post('/signup', async (req: Request, res: Response): Promise<Response> => {
     try {
-        const { data, error } = await supabase.from('users').select('*');
-
-        if (error) {
-            return res.status(400).json({ success: false, message: error.message });
-        }
-
-        return res.status(200).json({
-            success: true,
-            count: data?.length || 0,
-            users: data
-        });
-    } catch (err: any) {
-        return res.status(500).json({ success: false, message: err.message });
-    }
-});
-
-// POST: Signup Route (Direktang magse-save sa Supabase)
-router.post(
-    '/signup',
-    [
-        body('fullName').trim().notEmpty().withMessage('Full name is required.'),
-        body('email').trim().notEmpty().isEmail().withMessage('Enter a valid email address.'),
-        body('phoneNumber').trim().notEmpty().withMessage('Phone number is required.'),
-        body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.'),
-        body('emergencyName').trim().notEmpty().withMessage('Emergency contact name is required.'),
-        body('emergencyPhone').trim().notEmpty().withMessage('Emergency phone number is required.'),
-        body('vehicleType').trim().notEmpty().withMessage('Vehicle type is required.'),
-        body('plateNumber').trim().notEmpty().withMessage('Plate number is required.')
-    ],
-    async (req: Request, res: Response): Promise<Response> => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({
-                success: false,
-                message: errors.array()[0]?.msg || 'Validation failed.',
-                errors: errors.array()
-            });
-        }
-
         const {
             fullName,
             email,
@@ -65,103 +39,168 @@ router.post(
             plateNumber
         } = req.body;
 
-        const normalizedEmail = String(email).trim().toLowerCase();
+        // Input Validation
+        if (!fullName || typeof fullName !== 'string' || !fullName.trim()) {
+            return res.status(400).json({ success: false, message: 'Full name is required.' });
+        }
 
-        try {
-            // 1. I-check kung may nag-eexist na ring email sa Supabase
-            const { data: existingUser, error: checkError } = await supabase
-                .from('users')
-                .select('*')
-                .eq('email', normalizedEmail)
-                .maybeSingle();
+        if (!email || typeof email !== 'string' || !isValidEmail(email.trim())) {
+            return res.status(400).json({ success: false, message: 'Invalid email address format.' });
+        }
 
-            if (existingUser) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'An account with this email already exists.'
-                });
-            }
-
-            // 2. I-insert ang bagong user data sa Supabase table na 'users'
-            const { data, error: insertError } = await supabase
-                .from('users')
-                .insert([
-                    {
-                        full_name: fullName.trim(),
-                        email: normalizedEmail,
-                        phone_number: phoneNumber.trim(),
-                        password: password,
-                        emergency_name: emergencyName.trim(),
-                        emergency_phone: emergencyPhone.trim(),
-                        vehicle_type: vehicleType.trim(),
-                        plate_number: plateNumber.trim(),
-                        created_at: new Date().toISOString()
-                    }
-                ])
-                .select();
-
-            if (insertError) {
-                console.error('Supabase Insert Error:', insertError);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Database error: ' + insertError.message
-                });
-            }
-
-            console.log('✅ New User Successfully Saved to Supabase:', data);
-
-            return res.status(200).json({
-                success: true,
-                message: 'Account successfully created!',
-                user: data?.[0]
-            });
-
-        } catch (err: any) {
-            console.error('Server Exception:', err);
-            return res.status(500).json({
+        const trimmedPhone = typeof phoneNumber === 'string' ? phoneNumber.trim() : '';
+        if (!trimmedPhone || !isPHPhoneNumber(trimmedPhone)) {
+            return res.status(400).json({
                 success: false,
-                message: 'Server error: ' + err.message
+                message: 'Invalid Philippine phone number format. Must start with 09 or +639 followed by 9 digits.'
             });
         }
-    }
-);
 
-// POST: Login Route (Magbe-verify mula sa Supabase database)
-router.post('/login', async (req: Request, res: Response): Promise<Response> => {
-    const { email, password } = req.body;
+        if (!password || typeof password !== 'string' || !isValidPassword(password)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.'
+            });
+        }
 
-    if (!email || !password) {
-        return res.status(400).json({ success: false, message: 'Email and password are required.' });
-    }
+        const normalizedEmail = email.trim().toLowerCase();
 
-    try {
-        const normalizedEmail = String(email).trim().toLowerCase();
-
-        const { data: user, error } = await supabase
+        // 2. Reject duplicate email or phone number in Supabase (HTTP 409)
+        const { data: existingUser, error: checkError } = await supabase
             .from('users')
-            .select('*')
-            .eq('email', normalizedEmail)
+            .select('email, phone_number')
+            .or(`email.eq.${normalizedEmail},phone_number.eq.${trimmedPhone}`)
             .maybeSingle();
 
-        if (error || !user) {
-            return res.status(401).json({ success: false, message: 'Account not found. Please sign up first.' });
+        if (checkError) {
+            console.error('Supabase query error checking existing user:', checkError);
+            return res.status(500).json({
+                success: false,
+                message: 'Database query error: ' + checkError.message
+            });
         }
 
-        if (user.password !== password) {
-            return res.status(401).json({ success: false, message: 'Incorrect password. Please try again.' });
+        if (existingUser) {
+            if (existingUser.email?.toLowerCase() === normalizedEmail) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'Email is already registered'
+                });
+            }
+            if (existingUser.phone_number === trimmedPhone) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'Phone number is already registered'
+                });
+            }
+            return res.status(409).json({
+                success: false,
+                message: 'Email or phone number is already registered'
+            });
+        }
+
+        // 3. Hash password using bcrypt
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // 4. Insert user into Supabase `users` table
+        const insertPayload: any = {
+            full_name: fullName.trim(),
+            email: normalizedEmail,
+            phone_number: trimmedPhone,
+            password: hashedPassword
+        };
+
+        if (emergencyName) insertPayload.emergency_name = String(emergencyName).trim();
+        if (emergencyPhone) insertPayload.emergency_phone = String(emergencyPhone).trim();
+        if (vehicleType) insertPayload.vehicle_type = String(vehicleType).trim();
+        if (plateNumber) insertPayload.vehicle_plate_number = String(plateNumber).trim();
+
+        const { error: insertError } = await supabase
+            .from('users')
+            .insert([insertPayload]);
+
+        if (insertError) {
+            console.error('Supabase Insert Error:', insertError);
+            return res.status(500).json({
+                success: false,
+                message: 'Database insert error: ' + insertError.message
+            });
+        }
+
+        // 5. Return success JSON
+        return res.status(200).json({
+            success: true,
+            message: 'Account registered successfully'
+        });
+
+    } catch (err: any) {
+        console.error('Signup exception error:', err);
+        return res.status(500).json({
+            success: false,
+            message: 'Server error: ' + (err.message || 'An unexpected error occurred')
+        });
+    }
+});
+
+/**
+ * @route   POST /api/auth/login
+ * @desc    Authenticate user login via Supabase (supports Email or Phone) and bcrypt
+ * @access  Public
+ */
+router.post('/login', async (req: Request, res: Response): Promise<Response> => {
+    try {
+        const emailOrPhone = req.body.email || req.body.identifier || req.body.phoneNumber;
+        const { password } = req.body;
+
+        if (!emailOrPhone || !password) {
+            return res.status(400).json({ success: false, message: 'Email/Phone and password are required.' });
+        }
+
+        const inputVal = String(emailOrPhone).trim();
+        const isEmailInput = inputVal.includes('@');
+
+        let query = supabase.from('users').select('*');
+        if (isEmailInput) {
+            query = query.eq('email', inputVal.toLowerCase());
+        } else {
+            query = query.eq('phone_number', inputVal);
+        }
+
+        const { data: user, error: queryError } = await query.maybeSingle();
+
+        if (queryError) {
+            console.error('Supabase login query error:', queryError);
+            return res.status(500).json({ success: false, message: 'Database error occurred.' });
+        }
+
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({ success: false, message: 'Invalid email or password.' });
         }
 
         return res.status(200).json({
             success: true,
-            message: 'Login successful!',
+            message: 'Login successful',
             user: {
                 fullName: user.full_name,
-                email: user.email
+                email: user.email,
+                phoneNumber: user.phone_number,
+                vehicleType: user.vehicle_type,
+                plateNumber: user.vehicle_plate_number
             }
         });
 
     } catch (err: any) {
-        return res.status(500).json({ success: false, message: err.message });
+        console.error('Login exception error:', err);
+        return res.status(500).json({
+            success: false,
+            message: 'Server error: ' + (err.message || 'An unexpected error occurred')
+        });
     }
 });
 

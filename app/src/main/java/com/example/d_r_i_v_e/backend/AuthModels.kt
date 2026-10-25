@@ -2,20 +2,30 @@ package com.example.d_r_i_v_e.backend
 
 import com.google.gson.annotations.SerializedName
 
-sealed class SignUpUiState {
-    object Idle : SignUpUiState()
-    object Loading : SignUpUiState()
-    data class Success(val message: String) : SignUpUiState()
-    data class ValidationError(val message: String) : SignUpUiState()
-    data class ConnectionError(val message: String) : SignUpUiState()
+sealed class SignUpState {
+    data object Idle : SignUpState()
+    data object Loading : SignUpState()
+    data class Success(val message: String) : SignUpState()
+    data class Error(val message: String) : SignUpState()
+
+    data class ValidationError(val errorMessage: String) : SignUpState()
+    data class ConnectionError(val errorMessage: String) : SignUpState()
 }
+
+typealias SignUpUiState = SignUpState
 
 data class SignUpRequest(
     @SerializedName("fullName") val fullName: String,
     @SerializedName("email") val email: String,
-    @SerializedName("phoneNumber") val phoneNumber: String? = null,
+    @SerializedName("phoneNumber") val phoneNumber: String,
+    @SerializedName("password") val password: String
+)
+
+data class DriverSignUpRequest(
+    @SerializedName("fullName") val fullName: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("phoneNumber") val phoneNumber: String,
     @SerializedName("password") val password: String,
-    @SerializedName("confirmPassword") val confirmPassword: String,
     @SerializedName("emergencyName") val emergencyName: String,
     @SerializedName("emergencyPhone") val emergencyPhone: String,
     @SerializedName("vehicleType") val vehicleType: String,
@@ -24,11 +34,24 @@ data class SignUpRequest(
 
 data class SignUpResponse(
     @SerializedName("success") val success: Boolean,
-    @SerializedName("message") val message: String,
-    @SerializedName("errors") val errors: List<FieldError>? = null
+    @SerializedName("message") val message: String
 )
 
-data class FieldError(
-    @SerializedName("field") val field: String,
-    @SerializedName("message") val message: String
+data class LoginRequest(
+    @SerializedName("email") val email: String,
+    @SerializedName("password") val password: String
+)
+
+data class LoginResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("user") val user: AuthUserDto? = null
+)
+
+data class AuthUserDto(
+    @SerializedName("fullName") val fullName: String? = null,
+    @SerializedName("email") val email: String? = null,
+    @SerializedName("phoneNumber") val phoneNumber: String? = null,
+    @SerializedName("vehicleType") val vehicleType: String? = null,
+    @SerializedName("plateNumber") val plateNumber: String? = null
 )
