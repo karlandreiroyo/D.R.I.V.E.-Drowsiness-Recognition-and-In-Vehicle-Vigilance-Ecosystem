@@ -30,11 +30,26 @@ fun AppNavigation() {
     var isOnline by remember { mutableStateOf(false) }
     var isHardwareConnected by remember { mutableStateOf(false) }
 
+    // ===== Google sign-in + custom account chooser =====
     var selectedGoogleAccount by remember { mutableStateOf<Pair<String, String>?>(null) }
-    val startGoogleSignIn = rememberGoogleSignIn { name, email ->
+    var knownAccounts by remember { mutableStateOf(listOf<GoogleAccountItem>()) }
+    var showAccountChooser by remember { mutableStateOf(false) }
+
+    val launchRealGoogleSignIn = rememberGoogleSignIn { name, email ->
+        if (knownAccounts.none { it.email == email }) {
+            knownAccounts = knownAccounts + GoogleAccountItem(name, email)
+        }
         selectedGoogleAccount = Pair(name, email)
+        showAccountChooser = false
         navigateTo("driverRegistration")
     }
+
+    // Ito ang tatawagin ng mga Google button
+    val startGoogleSignIn: () -> Unit = {
+        if (knownAccounts.isEmpty()) launchRealGoogleSignIn()
+        else showAccountChooser = true
+    }
+    // ===================================================
 
     var trips by remember {
         mutableStateOf(
@@ -68,7 +83,7 @@ fun AppNavigation() {
     }
 
     val authViewModel: AuthViewModel = viewModel()
-    val signUpUiState by authViewModel.uiState.collectAsState()
+    val signUpState by authViewModel.signUpState.collectAsState()
 
     when (currentScreen) {
         "onboarding" -> OnboardingScreen(
@@ -82,28 +97,23 @@ fun AppNavigation() {
         )
 
         "signUp" -> SignUpScreen(
-            uiState = signUpUiState,
+            signUpState = signUpState,
             onBackClick = { goBack() },
-            onSignUpClick = { fullName, email, phoneNumber, password, confirmPassword,
-                              emergencyName, emergencyPhone, vehicleType, plateNumber ->
-                // Naayos na rito: Naipapasa na ang lahat ng kinakailangang parameter patungo sa ViewModel
-                authViewModel.signup(
+            onSignUpClick = { fullName, email, phoneNumber, emergencyName, emergencyPhone, vehicleType, plateNumber, password ->
+                // Pinalitan ng authViewModel.signUp para tumugma sa inilagay natin sa AuthViewModel.kt
+                authViewModel.signUp(
                     fullName = fullName,
                     email = email,
                     phoneNumber = phoneNumber,
-                    password = password,
-                    confirmPassword = confirmPassword,
                     emergencyName = emergencyName,
                     emergencyPhone = emergencyPhone,
                     vehicleType = vehicleType,
-                    plateNumber = plateNumber
+                    plateNumber = plateNumber,
+                    password = password
                 )
             },
-            onDismissDialog = {
-                authViewModel.dismissDialog()
-            },
-            onGoogleClick = { startGoogleSignIn() },
-            onLoginClick = { navigateTo("login") }
+            onLoginClick = { navigateTo("login") },
+            onResetState = { authViewModel.dismissDialog() }
         )
 
         "login" -> LoginScreen(
@@ -118,9 +128,16 @@ fun AppNavigation() {
         "driverRegistration" -> DriverRegistrationScreen(
             googleName = selectedGoogleAccount?.first ?: "",
             googleEmail = selectedGoogleAccount?.second ?: "",
+            signUpState = signUpState,
             onBackClick = { goBack() },
             onCompleteRegistration = { profile ->
-                navigateTo("dashboard")
+                authViewModel.registerDriver(profile)
+            },
+            onNavigateToLogin = {
+                navigateTo("login")
+            },
+            onResetState = {
+                authViewModel.dismissDialog()
             }
         )
 
@@ -277,6 +294,23 @@ fun AppNavigation() {
 
         "whatSystemDetects" -> WhatSystemDetectsScreen(
             onBackClick = { goBack() }
+        )
+    }
+
+    // Custom Google-style account chooser
+    if (showAccountChooser) {
+        AccountChooserDialog(
+            accounts = knownAccounts,
+            onAccountClick = { account ->
+                selectedGoogleAccount = Pair(account.name, account.email)
+                showAccountChooser = false
+                navigateTo("driverRegistration")
+            },
+            onAddAccountClick = {
+                showAccountChooser = false
+                launchRealGoogleSignIn()
+            },
+            onDismiss = { showAccountChooser = false }
         )
     }
 }

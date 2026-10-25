@@ -17,7 +17,7 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.example.d_r_i_v_e.R
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import kotlinx.coroutines.launch
@@ -47,7 +47,10 @@ suspend fun signInWithGoogle(
     Log.d(TAG, "Starting sign-in. serverClientId=$serverClientId")
 
     val credentialManager = CredentialManager.create(context)
-    val googleOption = GetSignInWithGoogleOption.Builder(serverClientId).build()
+    val googleOption = GetGoogleIdOption.Builder()
+        .setServerClientId(serverClientId)
+        .setFilterByAuthorizedAccounts(false)
+        .build()
     val request = GetCredentialRequest.Builder()
         .addCredentialOption(googleOption)
         .build()
