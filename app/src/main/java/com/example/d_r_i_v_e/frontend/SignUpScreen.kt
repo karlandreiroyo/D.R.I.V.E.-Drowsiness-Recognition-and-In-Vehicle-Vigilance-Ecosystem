@@ -204,7 +204,7 @@ fun SignUpScreen(
 
     val vehicleOptions = listOf("Sedan", "SUV", "AUV", "Hatchback", "Pickup", "Van", "Ape / Tricycle")
 
-    // Live validation states
+    // Live validation error states (real-time feedback)
     var fullNameError by remember { mutableStateOf<String?>(null) }
     var emailError by remember { mutableStateOf<String?>(null) }
     var phoneError by remember { mutableStateOf<String?>(null) }
@@ -429,7 +429,7 @@ fun SignUpScreen(
                             text = { Text(option, color = Color.White) },
                             onClick = {
                                 vehicleType = option
-                                vehicleTypeError = null
+                                vehicleTypeError = null // Live validation clear when selected
                                 expandedVehicleMenu = false
                             }
                         )
@@ -545,6 +545,7 @@ fun SignUpScreen(
             // Complete Registration / Signup Button
             Button(
                 onClick = {
+                    // Final validation check upon click
                     fullNameError = validateName(fullName, "Full name")
                     emailError = validateEmail(email)
                     phoneError = validatePhone(phoneNumber, "Phone number")
